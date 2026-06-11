@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "EQ Pro",
+  "version": "1.0",
+  "description": "Professional 20-band equalizer with pre-amp volume control",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "20-Band Equalizer"
+    },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
