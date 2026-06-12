@@ -21,9 +21,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
+// Helper to locate media elements across the main document and PiP windows
+function getMediaElement() {
+  // First, check the main tab
+  let media = document.querySelector('video') || document.querySelector('audio');
+  if (media) return media;
+
+  // If not in the main tab, check inside the Document PiP window if it exists
+  if (window.documentPictureInPicture && window.documentPictureInPicture.window) {
+    media = window.documentPictureInPicture.window.document.querySelector('video') || 
+            window.documentPictureInPicture.window.document.querySelector('audio');
+  }
+  
+  return media;
+}
+
 function initAudio(settings) {
   // Find the video or audio tag on the webpage
-  const mediaElement = document.querySelector('video') || document.querySelector('audio');
+  const mediaElement = getMediaElement(); 
   if (!mediaElement) return;
 
   if (!audioContext) {
@@ -123,4 +138,29 @@ function updateAudioSettings(settings) {
       }
     });
   }
+}
+
+// Auto-reconnect audio nodes during PiP window transitions to prevent dropouts
+function handlePiPTransition() {
+  if (isEnabled && audioContext && source && preAmpNode) {
+    // Give the browser 100ms to finish moving the video tag to the new window
+    setTimeout(() => {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      // Sever and re-establish the connection to wake the audio back up
+      source.disconnect();
+      source.connect(preAmpNode);
+    }, 100);
+  }
+}
+
+// Listen for the Document PiP window opening
+if ('documentPictureInPicture' in window) {
+  window.documentPictureInPicture.addEventListener('enter', (e) => {
+    handlePiPTransition();
+    
+    // Listen for the PiP window closing so we can reconnect when the video goes back to the main tab
+    e.window.addEventListener('pagehide', handlePiPTransition);
+  });
 }
