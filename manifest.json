@@ -9,10 +9,11 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "20-Band Equalizer"
-    },
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "all_frames": true,
       "js": ["content.js"]
     }
   ]

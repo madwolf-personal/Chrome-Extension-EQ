@@ -23,17 +23,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // Helper to locate media elements across the main document and PiP windows
 function getMediaElement() {
-  // First, check the main tab
-  let media = document.querySelector('video') || document.querySelector('audio');
-  if (media) return media;
+  // Grab ALL video and audio tags on the page (and inside iframes now!)
+  let mediaElements = [...document.querySelectorAll('video, audio')];
 
-  // If not in the main tab, check inside the Document PiP window if it exists
+  // Add any media elements from the PiP window if it exists
   if (window.documentPictureInPicture && window.documentPictureInPicture.window) {
-    media = window.documentPictureInPicture.window.document.querySelector('video') || 
-            window.documentPictureInPicture.window.document.querySelector('audio');
+    mediaElements.push(...window.documentPictureInPicture.window.document.querySelectorAll('video, audio'));
   }
+
+  // Find the one that actually has a source or is actively playing
+  let activeMedia = mediaElements.find(m => m.readyState > 0 && !m.paused) || mediaElements[0];
   
-  return media;
+  return activeMedia;
 }
 
 function initAudio(settings) {
